@@ -3,11 +3,6 @@ blueprint:
   description: Control your lights with the IKEA STYRBAR remote. You can also set actions for the left and right button.
   domain: automation
   input:
-    helper_name:
-      name: Helper Name
-      description: Unique name for the input select helper
-      selector:
-        text:
     transition_time:
       name: Transition time
       description: Transition time for the target lights in seconds
@@ -41,7 +36,7 @@ blueprint:
       selector:
         action: {}
     button_right:
-      name: right button
+      name: Right button
       description: Action to run on right button press
       default: []
       selector:
@@ -63,8 +58,7 @@ blueprint:
       default: false
       selector:
         boolean: {}
-  source_url: https://github.com/Computerfreak14/Z2M-Styrbar-remote-blueprint/blob/main/Z2M-IKEA-STYRBAR-remote.yaml
-
+  source_url: https://github.com/Noto123/Z2M-Styrbar-remote-blueprint/edit/main/Z2M-IKEA-STYRBAR-remote.yaml
 trigger:
 - platform: state
   entity_id: !input remote
@@ -81,31 +75,10 @@ trigger:
 - platform: state
   entity_id: !input remote
   to: "brightness_stop"
-
 condition: []
-
 action:
-- service: input_select.set_options
-  data:
-    entity_id: input_select.{{ helper_name }}
-    options:
-      - white
-      - orange
-      - gold
-      - red-orange
-      - pink
-      - lavender
-      - periwinkle
-      - light-salmon
-      - peach
-      - blue
-      - sky
-      - lime
-      - yellow
-
 - variables:
     command: '{{ trigger.to_state.state }}'
-
 - choose:
   - conditions:
     - condition: template
@@ -141,7 +114,7 @@ action:
     - repeat:
         until:
         - condition: template
-          value_template: '{{ states("sensor.ikea_remote_bunker_action") != "brightness_move_down" }}'
+          value_template: '{{ command == "brightness_stop" }}'
         sequence:
         - service: light.turn_on
           data:
@@ -156,7 +129,7 @@ action:
     - repeat:
         until:
         - condition: template
-          value_template: '{{ states("sensor.ikea_remote_bunker_action") != "brightness_move_up" }}'
+          value_template: '{{ command == "brightness_stop" }}'
         sequence:
         - service: light.turn_on
           data:
@@ -172,6 +145,5 @@ action:
     - condition: template
       value_template: '{{ command == "arrow_right_click" }}'
     sequence: !input button_right
-
 mode: restart
 max_exceeded: silent
