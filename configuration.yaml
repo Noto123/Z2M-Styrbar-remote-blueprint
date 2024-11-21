@@ -1,0 +1,18 @@
+input_select:
+  ikea_remote_rgb_colors:
+    options:
+      - white
+      - orange
+      - gold
+      - red-orange
+      - pink
+      - lavender
+      - periwinkle
+      - light-salmon
+      - peach
+      - blue
+      - sky
+      - lime
+      - yellow
+    initial: white
+    icon: mdi:palette
