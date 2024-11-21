@@ -1,0 +1,198 @@
+blueprint:
+  name: Ikea Styrbar Remote
+  description: Control your lights with the IKEA STYRBAR remote. You can also set actions for the left and right button.
+  domain: automation
+
+  input:
+    transition_time:
+      name: Transition time
+      description: Transition time for the target lights in seconds
+      selector:
+        number:
+          min: 1.0
+          max: 60.0
+          mode: slider
+          step: 0.1
+          unit_of_measurement: sec
+    remote:
+      name: Remote
+      description: The action entity of your Styrbar remote
+      selector:
+        entity:
+          domain:
+          - sensor
+          multiple: false
+    color_picker:
+      name: Color Loop
+      description: The input select that defines the color loop
+      selector:
+        target:
+          entity:
+          - domain:
+            - input_select
+    target_light:
+      name: Lights
+      description: The lights you want to control with the remote
+      selector:
+        target:
+          entity:
+          - domain:
+            - light
+    brightness:
+      name: Brightness
+      description: The brightness you want your lights to be when turning them on
+      default: 100
+      selector:
+        number:
+          min: 0.0
+          max: 100.0
+          mode: slider
+          step: 1.0
+          unit_of_measurement: '%'
+    force_brightness:
+      name: Force Brightness
+      description: Force the above set brightness when turning on the lamps?
+      default: false
+      selector:
+        boolean: {}
+  source_url: https://github.com/Noto123/Z2M-Styrbar-remote-blueprint/blob/main/Z2M-IKEA-STYRBAR-remote.yaml
+
+trigger:
+  - platform: state
+    entity_id: !input remote
+    to: "on"
+  - platform: state
+    entity_id: !input remote
+    to: "off"
+  - platform: state
+    entity_id: !input remote
+    to: "brightness_move_up"
+  - platform: state
+    entity_id: !input remote
+    to: "brightness_move_down"
+  - platform: state
+    entity_id: !input remote
+    to: "brightness_stop"
+
+condition: []
+
+action:
+  - variables:
+      command: '{{ trigger.to_state.state }}'
+  - choose:
+    - conditions:
+        - condition: template
+          value_template: '{{ command == "on" }}'
+      sequence:
+        - choose:
+            - conditions:
+                - condition: template
+                  value_template: '{{ force_brightness }}'
+              sequence:
+                - service: light.turn_on
+                  target: !input target_light
+                  data:
+                    transition: !input transition_time
+                    brightness_pct: !input brightness
+          default:
+            - service: light.turn_on
+              target: !input target_light
+              data:
+                transition: !input transition_time
+    - conditions:
+        - condition: template
+          value_template: '{{ command == "off" }}'
+      sequence:
+        - service: light.turn_off
+          target: !input target_light
+          data:
+            transition: !input transition_time
+    - conditions:
+        - condition: template
+          value_template: '{{ command == "brightness_move_down" }}'
+      sequence:
+        - repeat:
+            until:
+              - condition: template
+                value_template: '{{ command == "brightness_stop" }}'
+            sequence:
+              - service: light.turn_on
+                data:
+                  brightness_step_pct: -10
+                  transition: !input transition_time
+                target: !input target_light
+              - delay: '1'
+    - conditions:
+        - condition: template
+          value_template: '{{ command == "brightness_move_up" }}'
+      sequence:
+        - repeat:
+            until:
+              - condition: template
+                value_template: '{{ command == "brightness_stop" }}'
+            sequence:
+              - service: light.turn_on
+                data:
+                  brightness_step_pct: 10
+                  transition: !input transition_time
+                target: !input target_light
+              - delay: '1'
+    - conditions:
+        - condition: template
+          value_template: '{{ command == "arrow_left_click" }}'
+      sequence:
+        - service: input_select.select_previous
+          target:
+            entity_id: !input color_picker
+          data:
+            cycle: true
+        - service: light.turn_on
+          data:
+            rgb_color: >
+              {% set color = states('input_select.' ~ (color_picker | string)) %}
+              {% if color == 'white' %}[255, 255, 255] 
+              {% elif color == 'orange' %}[255, 146, 39] 
+              {% elif color == 'gold' %}[255, 168, 37] 
+              {% elif color == 'red-orange' %}[255, 103, 49] 
+              {% elif color == 'pink' %}[255, 91, 232] 
+              {% elif color == 'lavender' %}[198, 116, 255] 
+              {% elif color == 'periwinkle' %}[148, 122, 255] 
+              {% elif color == 'light-salmon' %}[255, 170, 95] 
+              {% elif color == 'peach' %}[255, 197, 149] 
+              {% elif color == 'blue' %}[0, 0, 255] 
+              {% elif color == 'sky' %}[135, 206, 235]
+              {% elif color == 'lime' %}[0, 255, 0]
+              {% elif color == 'yellow' %}[255, 255, 0] 
+              {% else %}[255, 255, 255] {% endif %}
+          target: !input target_light
+    - conditions:
+        - condition: template
+          value_template: '{{ command == "arrow_right_click" }}'
+      sequence: 
+        - service: input_select.select_next
+          target:
+            entity_id: !input color_picker
+          data:
+            cycle: true
+        - service: light.turn_on
+          data:
+            rgb_color: >
+              {% set color = states('input_select.' ~ (color_picker | string)) %}
+              {% if color == 'white' %}[255, 255, 255] 
+              {% elif color == 'orange' %}[255, 146, 39] 
+              {% elif color == 'gold' %}[255, 168, 37] 
+              {% elif color == 'red-orange' %}[255, 103, 49] 
+              {% elif color == 'pink' %}[255, 91, 232] 
+              {% elif color == 'lavender' %}[198, 116, 255] 
+              {% elif color == 'periwinkle' %}[148, 122, 255] 
+              {% elif color == 'light-salmon' %}[255, 170, 95] 
+              {% elif color == 'peach' %}[255, 197, 149] 
+              {% elif color == 'blue' %}[0, 0, 255] 
+              {% elif color == 'sky' %}[135, 206, 235]
+              {% elif color == 'lime' %}[0, 255, 0]
+              {% elif color == 'yellow' %}[255, 255, 0] 
+              {% else %}[255, 255, 255] {% endif %}
+          target: !input target_light
+
+mode: restart
+max_exceeded: silent
